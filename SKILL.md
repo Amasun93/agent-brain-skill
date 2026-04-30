@@ -5,39 +5,6 @@ description: 可移植的Agent大脑——让任何Agent装上就能共享同一
 
 # Agent Brain Skill
 
-## 快速开始
-
-> **给Agent的核心描述**：复制以下内容给你的Agent，它就知道怎么用了：
-
-```
-## Agent Brain 认知记忆系统
-
-### 我是谁
-你的用户有一个可移植的"数字大脑"，存储在GitHub仓库中。读取brain/目录即可了解用户是谁。
-
-### 怎么连
-1. 克隆私人仓库：`git clone https://github.com/YOUR_USERNAME/agent-brain.git ./brain`
-2. 读取 `brain/index.md` 获取用户核心认知
-3. 按需加载：`brain/cognition/`（行为/价值观/核心特质）
-
-### 怎么记
-遇到重要信息时：
-- 初步观察 → `brain/wiki/entries/` 或 `brain/pending.md`
-- 规律提炼 → `brain/cognition/behavior.md` 或 `cognition.md`
-- L5核心特质变更 → 需用户确认后写入
-
-### 怎么同步
-- 会话开始：`git pull`
-- 会话结束：`git add . && git commit && git push`
-
-### 核心原则
-- 始终加载 `brain/index.md`（<500字）
-- 深层认知（L4/L5）变更需用户确认
-- 提炼优于存储——把对话变成结论
-```
-
----
-
 ## 记忆哲学
 
 **记忆不是存储问题，是认知问题。**
@@ -50,13 +17,15 @@ Agent 不是"帮你查资料的工具"，而是"越来越懂你的搭子"。每�
 
 人的记忆是复利的——十年前的某个感悟，今天依然在影响你的选择。Agent 的记忆也应该如此。
 
-每次对话不应该是从零开始。昨天的讨论结论、上周的决策背景、上个月形成的偏好，这些都应该自动沉淀下来，成为下一次对话的起点。
+每次对话不应该是从零开始。昨天的讨论结论、上周的决策背景、上个月形成的偏好，这些都应该自动沉淀下来，成为下一次对话的起点。你不需要重复说"我上周提到想做 X"，因为 Agent 应该已经知道。
 
 **② 被动沉淀优于主动设定**
 
 最好的记忆不是"用户告诉我的"，而是"我观察到的"。
 
-主动设定的信息（如"我的目标是创业"）可能只是一时念头；被动观察到的模式才是真正的认知特征。
+与其问"你有什么目标"，不如在对话中自己发现：用户遇到选择时会沉默、讨论金钱话题时会回避、看长远规划时会走神——这些行为模式比任何自述都更真实。
+
+主动设定的信息（如"我的目标是创业"）可能只是一时念头；被动观察到的模式（如"每次提到执行力都会举例马斯克"）才是真正的认知特征。
 
 **③ 提炼是记忆的灵魂，不是存储**
 
@@ -68,7 +37,17 @@ Agent 不是"帮你查资料的工具"，而是"越来越懂你的搭子"。每�
 
 **④ 深层认知需要用户确认**
 
-L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确认才能写入，而不是 Agent 自己推断。
+L4（价值观）和 L5（核心特质）的改动不是小事。
+
+"用户是一个追求成长的人"——这句话如果写错，比忘记一条对话严重得多。所以 L4/L5 的提炼需要用户确认才能写入，而不是 Agent 自己推断。
+
+### 记忆与身份
+
+**同一个"你"在不同 Agent 身体里**
+
+今天用扣子处理工作，明天用 Claude Code 写代码，后天用 Cursor 修 Bug——无论哪个 Agent，记忆应该是共享的。你不需要重新自我介绍，不需要再次解释你的偏好，因为所有 Agent 读的是同一套记忆。
+
+这不只是一个技术方案，更是一种身份哲学：你不是在使用多个工具，你是在让不同能力的"分身"帮你处理不同场景，但它们都服务于同一个你。
 
 ### 判断标准
 
@@ -87,15 +66,19 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 
 **这套方案不是凭空设计的，是站在前人的肩膀上。**
 
-如果你在另一个 Agent 环境里读到这个 Skill，希望你不仅知道"怎么做"，更理解"为什么这样做"——这样你才能根据自己平台的能力做正确的适配。
+如果你在另一个 Agent 环境里读到这个 Skill，希望你不仅知道"怎么做"，更理解"为什么这样做"——这样你才能根据自己平台的能力做正确的适配，而不是死板地复刻每一行配置。
+
+---
 
 ### 三个源框架
 
 我们这套认知记忆方案融合了四个经过实践检验的框架。它们各自解决了一个独特的维度，合在一起才能完整地描述"如何让 AI 真正理解一个人"。
 
-#### 1. 五层 AI 记忆架构
+#### 1. 五层 AI 记忆架构（CodeBuddy 用户实践）
 
 **解决的问题**：让 AI 从"记住对话"升级到"理解你这个人"。
+
+这套框架的核心理念是：**深层认知（L4/L5）和浅层状态（L1/L2）是完全不同的信息，需要分层管理。**
 
 | 层级 | 名称 | 存储什么 | 生命周期 |
 |------|------|----------|----------|
@@ -105,38 +88,59 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 | L4 | 认知层 | 价值观、信念体系、思维模式 | 长期 |
 | L5 | 核心层 | 人格特质、底层驱动力、核心恐惧 | 最长期 |
 
-**为什么分层重要？** 因为不同层级的信息有不同的写入规则和置信度要求。
+**为什么分层重要？** 因为不同层级的信息有不同的写入规则和置信度要求。一个今天随口说的想法应该存在 L2（可以过期删除）；但"你是一个追求成长的人"这种判断如果写错，比忘记一条对话严重得多，所以 L4/L5 需要用户确认才能写入。
 
-#### 2. PromptX Engram 系统
+---
+
+#### 2. PromptX Engram 系统（DeepPractice AI 开源项目）
 
 **解决的问题**：记忆不是扁平的，不同类型的记忆有不同的生命周期和访问模式。
 
-| 分类 | 定义 | 典型问题 |
-|------|------|----------|
-| 知识 (Knowledge) | 客观事实，可验证 | "水的沸点是多少？" |
-| 方案 (Solution) | 解决问题的方法步骤 | "怎么组织会议？" |
-| 经验 (Experience) | 亲身经历形成的判断 | "用户对这个话题的反应" |
-| 参考 (Reference) | 辅助理解的背景信息 | "项目启动时间" |
+PromptX 借鉴神经科学中的"记忆印记"概念，将记忆分为四个象限：
 
-#### 3. Karpathy LLM Wiki 方法论
+| 分类 | 定义 | 典型问题 | 存储策略 |
+|------|------|----------|----------|
+| 知识 (Knowledge) | 客观事实，可验证 | "水的沸点是多少？" | 外部知识库 |
+| 方案 (Solution) | 解决问题的方法步骤 | "怎么组织会议？" | 流程文档 |
+| 经验 (Experience) | 亲身经历形成的判断 | "用户对这个话题的反应" | 情境记录 |
+| 参考 (Reference) | 辅助理解的背景信息 | "项目启动时间" | 索引引用 |
+
+**为什么分类重要？** 因为不同类型的记忆需要不同的提炼策略。知识可以直接记忆；经验需要积累≥3 次观察才能提炼为规律；参考只是辅助，不值得占用核心记忆空间。
+
+---
+
+#### 3. Karpathy LLM Wiki 方法论（Andrej Karpathy 提出）
 
 **解决的问题**：原始资料和提炼知识的服务对象不同，需要分离管理。
+
+Karpathy 提出的三层架构：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Schema (结构定义)                                          │
+│  定义"怎么存储"——给 Agent 看的数据结构                     │
 ├─────────────────────────────────────────────────────────────┤
 │  Wiki (提炼知识)                                            │
+│  二次加工后的知识——给 Agent 看的理解                        │
 ├─────────────────────────────────────────────────────────────┤
-│  Raw (原始资料)                                            │
+│  Raw (原始资料)                                             │
+│  原始对话、文章、文档——给人看的存档                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 4. RoleX 认知循环
+**关键洞察**：Raw 层是给人存档备查的，Wiki 层才是给 Agent 看的。Agent 不需要记住"1月15日和用户讨论了保险的完整对话"，它需要的是提炼后的结论"用户做决策前需要3天冷静期，期间不要催促"。
+
+---
+
+#### 4. RoleX 认知循环（PromptX V2 模块化角色系统）
 
 **解决的问题**：记忆不是一次性写入的，需要多轮观察→假设→验证→确认的渐进过程。
 
-四阶段提炼循环：`Encounter → Reflect → Experience → Realize`
+四阶段提炼循环：
+
+```
+Encounter (接触) → Reflect (反思) → Experience (体验) → Realize (领悟)
+```
 
 | 阶段 | 做什么 | 时间跨度 |
 |------|--------|----------|
@@ -145,9 +149,32 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 | Experience | 实践中验证假设 | 天~周 |
 | Realize | 多次验证后沉淀为稳定认知 | 周~月 |
 
-### 3D 认知矩阵
+**为什么需要循环？** 因为单次观察可能是噪声。RoleX 循环的本质是**证据积累机制**——"用户喜欢简洁"不能只凭一次观察就写入 L3，而应该等待多次验证。
+
+---
+
+### 为什么这三个框架能融合？——3D 认知矩阵
 
 三个框架解决的是不同维度的问题，它们**互相正交，不冲突**：
+
+```
+                    纵深轴 (五层架构)
+                         ↑
+                         │
+                    L5   │   L4   │   L3   │   L2   │   L1
+                    核心层│ 认知层 │ 行为层 │ 情境层 │ 状态层
+                         │        │        │        │
+            横切轴 ──────┼────────┼────────┼────────┼───────→ PromptX四分类
+          (什么类型)     │        │        │        │
+                    知识 │  方案  │  经验  │  参考  │
+                         │        │        │        │
+                         │        │        │        │
+                    提炼轴 ──────┼────────┼────────┼────────┼──────→ RoleX循环
+                  (多确定)        │        │        │        │
+                           Encounter│Reflect│Experi │Realize │
+                                    │       │ence   │        │
+                         └─────────────────────────────────┘
+```
 
 | 轴 | 解决的问题 | 核心问题 |
 |----|-----------|----------|
@@ -155,9 +182,15 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 | **横切轴** | 信息属于什么类型？ | "什么类型" |
 | **提炼轴** | 信息的成熟度多高？ | "多确定" |
 
+**一个信息的完整描述**可以是：
+- "用户第三次讨论转行" → L2（情境层）+ 经验（PromptX）+ Encounter（RoleX）
+- 提炼后 → L3（行为层）+ 经验（PromptX）+ Realize（RoleX）
+
+同一个事件在不同阶段有不同的"坐标"，但它们指向同一个实体。
+
 ---
 
-## 知识层 ≠ 认知层
+### 知识层 ≠ 认知层
 
 这是两个完全不同的职责域，混淆它们是大多数 Agent 记忆系统失败的原因：
 
@@ -167,6 +200,55 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 | **内容** | 行为模式、价值观、核心特质 | 情境事件、行业知识、技术方案 |
 | **变化频率** | 慢，重大变化需用户确认 | 快，随新信息持续更新 |
 | **服务对象** | 决定 Agent **怎么跟你说话** | 决定 Agent **能帮你做什么** |
+| **提炼程度** | 高，需要多次验证 | 可低，原文存档也可接受 |
+
+**例子**：
+- 认知层：`brain/cognition/behavior.md` 记录"用户做决策前需要3天冷静期"
+- 知识层：`brain/wiki/entries/L2-2024-015.md` 记录"1月15日讨论了保险，对话记录如下..."
+
+两个模块独立维护，但协同工作：认知层引用知识层的事件来提炼规律，知识层通过认知层的过滤器来决定哪些信息值得深度加工。
+
+---
+
+### 设计目的
+
+**核心目标：打造可移植的 Agent 大脑**
+
+> 你换了一个 Agent，不需要重新自我介绍。
+> 你换了一个模型平台，记忆不绑定任何厂商。
+
+这不只是技术方案，更是一种身份哲学：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                              │
+│   今天用扣子处理工作 ──┐                                     │
+│                        │    同一套记忆   同一个"你"          │
+│   明天用 Claude Code ──┼──► 跨平台共享  跨Agent同步          │
+│                        │                                     │
+│   后天用 Cursor ───────┘                                     │
+│                                                              │
+│   记忆不绑定平台 ──"谁家模型好用迁谁家"                      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Git 同步是实现手段，不是目的。** 最终形态是：你有一个独立于任何 Agent 的"数字身份"，所有 Agent 都只是这个身份的接口。
+
+---
+
+### 适配原则
+
+如果你要在自己的 Agent 环境实现这套方案，请记住每个框架的**核心意图**，不要死板复刻实现细节：
+
+| 框架 | 核心意图 | 可裁剪的细节 |
+|------|----------|--------------|
+| **五层架构** | "区分信息深度，不同深度不同管理策略" | 没有语义搜索的平台可以跳过 L1 检索优化；只有文本文件的平台可以用文件名约定替代结构化存储 |
+| **PromptX 四分类** | "区分记忆类型，不同类型不同生命周期" | 不一定要用 SQLite，向量数据库可以用 Markdown 替代；核心是分类逻辑，不是存储技术 |
+| **RoleX 循环** | "渐进式验证，观察→验证→确认的证据积累" | 不一定要四阶段名称，但必须有"观察→验证→确认"的机制；Heartbeat 可以换成 Cron 或手动触发 |
+| **LLM Wiki** | "原始资料和提炼知识分离，服务对象不同" | 不一定要用 Obsidian，但一定要有两层；Wiki 层给 Agent 看，Raw 层给人存档 |
+
+**最低保障**：如果你只能实现一个能力，请实现**提炼机制**——把原始对话提炼成结构化结论，比存一堆对话日志有价值一百倍。
 
 ---
 
@@ -179,7 +261,7 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 │                                                             │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
 │  │cognitive-    │    │  wiki-       │    │  git-sync    │  │
-│  │memory        │◄──►│  builder     │    │              │  │
+│  │memory        │◄──►│  builder     │◄──►│              │  │
 │  │(认知层)      │    │  (知识层)    │    │  (同步层)    │  │
 │  │              │    │              │    │              │  │
 │  │管"你是谁"   │    │管"你知道什么"│    │管"怎么共享" │  │
@@ -188,8 +270,37 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 │  │• 价值观认知  │    │• 知识条目    │    │• GitHub协作  │  │
 │  │• 核心特质    │    │• 交叉引用    │    │• Obsidian本地│  │
 │  └──────────────┘    └──────────────┘    └──────────────┘  │
+│           ▲                  │                  │          │
+│           │                  │                  │          │
+│  ┌────────┴─────────────────┴──────────────────┘          │
+│  │                                                       │
+│  │  ┌──────────────┐                                     │
+│  └──│    ingest    │────────────────────────────────────┘
+│     │  (摄入层)    │                                     │
+│     │              │                                     │
+│     │管"怎么入库" │                                     │
+│     │              │                                     │
+│     │• MinerU提取  │                                     │
+│     │• AI校正      │                                     │
+│     │• 智能切片    │                                     │
+│     └──────────────┘                                     │
+│                                                             │
+│                    ┌──────────────────┐                    │
+│                    │   brain/ 目录     │                    │
+│                    │   (记忆数据层)    │                    │
+│                    └──────────────────┘                    │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### 四大模块协作关系
+
+```
+ingest (摄入) → wiki-builder (知识沉淀) → cognitive-memory (认知提炼) → git-sync (同步共享)
+     │                  │                      │                      │
+     ▼                  ▼                      ▼                      ▼
+ 原始文档 →         Wiki条目 →             认知沉淀 →            跨平台共享
+ Markdown切片       知识积累              行为/价值观模式
 ```
 
 ### 三层协作示例
@@ -205,7 +316,7 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
 知识层(wiki-builder)
   │
   ├── 检索相关情境事件 L2-2024-012、L2-2024-008
-  ├── 读取详细内容，发现共性
+  ├── 读取详细内容，发现共性：都在年末、都伴随"没意思"的表达
   │
   ▼
 提炼结论
@@ -215,15 +326,31 @@ L4（价值观）和 L5（核心特质）的改动不是小事，需要用户确
   └── 写入 pending.md 标记"待第3次验证"
 ```
 
+**场景：新 Agent 首次启动**
+
+```
+git-sync
+  │
+  ├── 从 GitHub pull 最新记忆
+  │
+  ▼
+认知层
+  │
+  ├── 读 index.md（<500字，快速建立基本认知）
+  ├── 按需加载 behavior.md / cognition.md
+  │
+  ▼
+知识层
+  │
+  └── 按需检索 wiki/entries/
+```
+
 ---
 
 ## 文件结构
 
-> **重要**：本仓库（agent-brain-skill）包含的是 Skill 代码和模板。
-> brain/ 目录是**你自己的独立私有仓库**，不包含在本仓库中。
-
 ```
-agent-brain-skill/
+agent-brain/
 ├── SKILL.md                     ← 本文件，哲学+架构+配置
 ├── modules/
 │   ├── cognitive-memory/        ← 认知记忆模块
@@ -237,20 +364,24 @@ agent-brain-skill/
 │   │       └── memory-entry.md
 │   ├── wiki-builder/            ← 知识库模块
 │   │   └── SKILL.md
-│   └── git-sync/                ← 同步模块
+│   ├── git-sync/                ← 同步模块
+│   │   └── SKILL.md
+│   └── ingest/                  ← 摄入模块（MinerU管线）
 │       └── SKILL.md
 ├── config/
-│   └── config.template.json      ← 配置模板（仅占位符）
-└── templates/
-    └── brain-init/              ← brain/ 目录初始化模板
-        ├── index.md
-        ├── log.md
-        ├── .gitignore
-        ├── 00-共享认知/
-        ├── 01-知识库/
-        ├── 02-原始资料/
-        ├── 03-Agent空间/
-        └── 04-待处理/
+│   └── config.template.json      ← 配置模板
+└── brain/                       ← 记忆数据目录（Git管理）
+    ├── index.md                 ← 主索引（始终加载）
+    ├── cognition/
+    │   ├── behavior.md          ← L3 行为模式
+    │   ├── cognition.md         ← L4 价值观认知
+    │   └── core.md              ← L5 核心特质
+    ├── wiki/
+    │   ├── index.md             ← 情境索引
+    │   └── entries/             ← 情境详情
+    ├── boundary.md              ← 边界设定
+    ├── pending.md               ← 待验证队列
+    └── log.md                   ← 操作日志
 ```
 
 ---
@@ -260,6 +391,12 @@ agent-brain-skill/
 ### cognitive-memory（认知层）
 
 **职责**：管"你是谁"——用户的身份特征、行为模式、价值观、核心特质。
+
+**核心能力**：
+- 五层架构分类（L1~L5）
+- PromptX 横切分类（知识/方案/经验/参考）
+- RoleX 提炼循环（Encounter → Reflect → Experience → Realize）
+- 反幻觉校验
 
 **存储**：`brain/cognition/` + `brain/boundary.md`
 
@@ -271,7 +408,15 @@ agent-brain-skill/
 
 **职责**：管"你知道什么"——情境事件、知识条目、交叉引用。
 
+**核心能力**：
+- 持久化知识积累
+- 交叉引用建立
+- 矛盾检测与标注
+- 定期 Lint 健康检查
+
 **存储**：`brain/wiki/`
+
+**触发**：ingest 新资料、查询已有知识、矛盾发现时
 
 ---
 
@@ -279,53 +424,207 @@ agent-brain-skill/
 
 **职责**：管"怎么共享"——跨 Agent、跨设备同步记忆。
 
+**核心能力**：
+- GitHub 仓库读写
+- Obsidian 本地预览
+- 分层写入减少冲突
+- 冲突自动标记
+
 **存储**：`brain/`（整体 Git 管理）
 
 **触发**：会话开始（pull）、会话结束（push）、定时同步
 
 ---
 
+### ingest（摄入层）
+
+**职责**：管"怎么入库"——将PDF/DOCX等原始文档转换为AI友好的Markdown知识。
+
+**核心理念**：富文本格式在AI眼里就是"满身泥的萝卜"，需要先洗干净再喂给AI。
+
+**核心能力**：
+- MinerU提取（PDF/DOCX → Markdown + JSON + 图片）
+- AI校正（修正OCR错误，修复格式错乱）
+- 智能切片（按文档类型选择不同粒度）
+- 三种运行模式（云端/ API/ 本地）
+
+**存储**：`brain/01-知识库/`（归档后的切片文档）
+
+**触发**：用户提交新文档、批量导入资料、文档入库请求
+
+**与wiki-builder的协作**：
+- ingest负责"怎么把文档变成Markdown"
+- wiki-builder负责"怎么把Markdown变成知识"
+
+---
+
 ## 环境适配指南
+
+不同 Agent 环境实现 agent-brain 能力的替代方案：
 
 | 能力 | 扣子Agent | Claude Code | Cursor/CodeBuddy | 通用方案 |
 |------|-----------|-------------|-------------------|----------|
 | **文件读写** | `edit_file`/`read_file` | 直接文件操作 | 直接文件操作 | 按平台API |
-| **Git操作** | `bash`（需云电脑） | 直接终端 | 内置终端 | 按平台能力 |
 | **语义搜索** | `memory_search` | 内置语义搜索 | grep/ripgrep | 按平台能力 |
+| **定时任务** | Calendar+Heartbeat | cron/systemd | 无（需手动） | 按平台能力 |
+| **Git操作** | `bash`（需云电脑） | 直接终端 | 内置终端 | 按平台能力 |
+| **子任务** | `sessions_spawn` | 子进程 | 无 | 按平台能力 |
+| **Obsidian预览** | 不支持 | 需本地运行 | 需本地运行 | 需本地运行 |
+| **MinerU提取** | 云电脑CLI / API模式 | 本地CLI | 本地CLI | 按算力选择 |
+
+### 各环境适配要点
+
+**扣子Agent**
+- 主存储：Coze 内置 `memory_search` + 文件操作
+- Git 同步：需要云电脑或通过 API 调用
+- Obsidian：仅预览，不支持本地编辑
+- MinerU：
+  - 云电脑模式：`mineru -p xxx.pdf -o ./output -b pipeline`（CLI已预装）
+  - API模式：调用 mineru.net 在线API（需要API Key）
+
+**Claude Code**
+- 完整支持所有功能
+- `.claude/` 可作为 brain/ 的符号链接或直接使用
+- 内置 `Read`/`Write` 命令比 Coze 更灵活
+- MinerU：本地CLI执行，配合项目目录使用
+
+**Cursor/CodeBuddy**
+- 内置终端支持完整 Git 操作
+- 可直接编辑 `brain/` 目录
+- Obsidian 插件可无缝集成
+- MinerU：本地CLI执行，配合Obsidian使用
+
+**其他Agent**
+- 核心依赖：文件读写 + Git
+- 可选增强：语义搜索、定时任务
+- 最低保障：纯文本文件 + Git push/pull
+
+---
+
+## 配置模板
+
+创建 `config/config.json`（或通过环境变量覆盖）：
+
+```json
+{
+  "brain": {
+    "path": "./brain",
+    "index_file": "index.md"
+  },
+  "git": {
+    "repo": "https://github.com/USER/agent-brain.git",
+    "branch": "main",
+    "author": {
+      "name": "Agent Name",
+      "email": "agent@brain.local"
+    },
+    "sync_on_start": true,
+    "sync_on_end": true,
+    "auto_push_interval": 3600
+  },
+  "obsidian": {
+    "vault_path": "~/Obsidian/agent-brain",
+    "enable_preview": true
+  },
+  "modules": {
+    "cognitive_memory": {
+      "enabled": true,
+      "max_index_lines": 500,
+      "require_user_confirm_for_l4": true
+    },
+    "wiki_builder": {
+      "enabled": true,
+      "auto_ingest": false,
+      "lint_interval": 86400
+    },
+    "git_sync": {
+      "enabled": true,
+      "conflict_strategy": "mark_and_keep_both"
+    },
+    "ingest": {
+      "enabled": true,
+      "mode": "cli",
+      "output_base": "./brain/01-知识库",
+      "correction": {
+        "enabled": true,
+        "model": "auto"
+      },
+      "slicing": {
+        "auto": true,
+        "strategy": "auto"
+      }
+    }
+  },
+  "agent": {
+    "id": "coze-agent-david",
+    "name": "扣子助手",
+    "capabilities": ["file_ops", "git", "schedule", "semantic_search"]
+  }
+}
+```
 
 ---
 
 ## 首次安装流程
 
-### Step 1: 创建你自己的私有GitHub仓库
-
-在 GitHub 上创建一个新的私有仓库，例如 `agent-brain`。
-
-### Step 2: 克隆 agent-brain-skill 仓库
+### Step 1: 初始化 brain/ 目录
 
 ```bash
-git clone https://github.com/Amasun93/agent-brain-skill.git
+# 克隆或创建 brain 目录
+git clone https://github.com/USER/agent-brain.git ./brain
+
+# 或初始化空目录（如果是全新开始）
+mkdir -p brain/{cognition,wiki/entries}
 ```
 
-### Step 3: 克隆你的私人仓库
+### Step 2: 创建基础文件
 
-```bash
-git clone https://github.com/YOUR_USERNAME/agent-brain.git ./brain
+按照 `brain/` 目录结构创建以下文件：
+
+**brain/index.md**
+```markdown
+# 认知记忆索引
+
+## 文件位置
+- L3-L5: `brain/cognition/`
+- L2情境: `brain/wiki/index.md`
+- 边界: `brain/boundary.md`
+
+## 统计
+- 最后更新: YYYY-MM-DD
+- 条目总数: 0
 ```
 
-### Step 4: 复制初始化模板
+**brain/cognition/behavior.md**
+```markdown
+# L3 行为模式
 
-将 `agent-brain-skill/templates/brain-init/` 下的所有文件复制到 `./brain/` 目录。
+## 待填充
+```
 
-### Step 5: 推送初始化结构到你的仓库
+**brain/cognition/cognition.md**
+```markdown
+# L4 价值观认知
+
+## 待填充
+```
+
+**brain/cognition/core.md**
+```markdown
+# L5 核心特质
+
+## 待填充
+```
+
+### Step 3: 配置 GitHub 同步
 
 ```bash
 cd brain
-git remote add origin https://github.com/YOUR_USERNAME/agent-brain.git
+git remote add origin https://github.com/USER/agent-brain.git
 git push -u origin main
 ```
 
-### Step 6: 认知初始化
+### Step 4: 首次认知初始化
 
 与用户对话，收集基本信息：
 
@@ -334,7 +633,17 @@ git push -u origin main
 - **核心目标**：长期目标是什么、在意什么
 - **边界设定**：什么话题敏感、什么雷区不能踩
 
-写入 `brain/00-共享认知/` 下的文件。
+写入 `brain/cognition/core.md` 和 `brain/boundary.md`。
+
+### Step 5: 验证同步
+
+```bash
+# 在另一个 Agent 环境中
+git clone https://github.com/USER/agent-brain.git
+cat brain/index.md
+```
+
+确认两个环境看到相同的记忆。
 
 ---
 
@@ -350,6 +659,10 @@ git pull origin main
 cat brain/index.md
 
 # 3. 根据需要加载详细文件
+# - 涉及用户偏好 → brain/cognition/behavior.md
+# - 涉及价值观判断 → brain/cognition/cognition.md
+# - 涉及核心身份 → brain/cognition/core.md
+# - 涉及具体事件 → brain/wiki/index.md → brain/wiki/entries/
 ```
 
 ### 会话中
@@ -368,12 +681,17 @@ cat brain/index.md
 3. experience：实践中验证假设
 
 4. realize：提炼写入认知层
+   - L3 behavior.md（行为模式）
+   - L4 cognition.md（价值观认知）
+   - L5 core.md（核心特质，仅用户确认后）
 ```
 
 ### 会话结束
 
 ```bash
 # 1. 更新索引（如果有新内容）
+# - brain/index.md
+# - brain/wiki/index.md
 
 # 2. 追加日志
 echo "## [日期] [Agent] [会话摘要]" >> brain/log.md
@@ -383,6 +701,113 @@ git add .
 git commit -m "Update: [简短描述]"
 git push origin main
 ```
+
+### 定期任务
+
+**Heartbeat（轻量扫描）**
+- 检查 pending.md 中的待验证项
+- 判断是否积累足够证据可提炼
+
+**Calendar（深度提炼）**
+- 执行 wiki-builder 的 Lint 检查
+- 识别矛盾、过时内容
+- 更新交叉引用
+
+---
+
+## 冲突解决策略
+
+### 分层写入减少冲突
+
+| 文件 | 写入频率 | 冲突风险 | 策略 |
+|------|----------|----------|------|
+| `index.md` | 低 | 中 | 合并更新 |
+| `cognition/*.md` | 低 | 低 | 用户确认后写入 |
+| `wiki/entries/*.md` | 中 | 中 | 按主题分区 |
+| `pending.md` | 高 | 低 | 仅追加 |
+| `log.md` | 高 | 低 | 仅追加 |
+
+### 冲突处理流程
+
+```bash
+# 1. 检测冲突
+git pull
+# → CONFLICT: brain/cognition/behavior.md
+
+# 2. 保留两份
+git checkout --ours brain/cognition/behavior.md
+git show :2:brain/cognition/behavior.md > brain/cognition/behavior.md.local
+git show :3:brain/cognition/behavior.md > brain/cognition/behavior.md.remote
+
+# 3. 标记待确认
+echo "## 冲突待确认 - [日期]" >> brain/pending.md
+echo "- ours: behavior.md.local" >> brain/pending.md
+echo "- remote: behavior.md.remote" >> brain/pending.md
+
+# 4. 提交
+git add .
+git commit -m "Merge with conflicts marked"
+git push
+```
+
+---
+
+## 关键设计原则
+
+### 反幻觉校验四规则
+
+记忆不是越多越好，错误的记忆比没有记忆更危险。
+
+| 规则 | 说明 | 检查方法 |
+|------|------|----------|
+| **小样本校验** | 单次观察不能形成结论 | 需要 ≥3 次独立观察 |
+| **情境依赖校验** | 判断需标注使用场景 | "在 X 情境下倾向于 Y" |
+| **言行一致校验** | 说的和做的是否一致 | 对照行为记录验证 |
+| **可逆表述校验** | 结论应该是可修正的 | "目前倾向于..."而非"用户就是..." |
+
+### 提炼证据链
+
+```
+原始观察（Encounter）
+    ↓ [第1次]
+假设（待验证）
+    ↓ [第2次相同模式]
+假设强化
+    ↓ [第3次相同模式]
+初步结论 → 可写入 L3 behavior.md
+    ↓ [跨情境验证]
+L4/L5 认知 → 需用户确认
+```
+
+### 分层权限
+
+| 层级 | 写入权限 | 确认要求 |
+|------|----------|----------|
+| L1 State | 无（不持久化） | N/A |
+| L2 Situation | Agent 直接写入 | 可选确认 |
+| L3 Behavior | Agent 提炼写入 | 推荐确认 |
+| L4 Cognition | Agent 提炼写入 | **必须确认** |
+| L5 Core | Agent 提炼写入 | **必须确认** |
+
+### 知识库人工参与
+
+wiki-builder 的 ingest 流程必须有人工参与：
+
+```
+Raw Source 进入
+    ↓
+LLM 读取并分析
+    ↓
+与用户确认关键要点（逐条讨论）
+    ↓
+写入 wiki 页面
+    ↓
+更新 index
+    ↓
+记录 log
+```
+
+不允许全自动 ingest——用户必须对知识库内容有最终知情权。
 
 ---
 
@@ -400,6 +825,229 @@ brain/ 目录设计为可公开分享，但敏感信息必须隔离存放。
 | 配置模板 | `config/config.template.json` | ✅ 可纳入 | 仅含占位符 |
 | 认知层 | `brain/00-共享认知/` | ✅ 可纳入 | 不含敏感个人信息 |
 | 原始资料 | `brain/02-原始资料/` | ❌ 不纳入 | PDF/PPTX等大文件 |
+| 原始资料 | `brain/02-原始资料/` | ❌ 不纳入 | 敏感文档 |
+
+### config.json 结构
+
+```json
+{
+  "sensitive": {
+    "github_token": "ghp_xxxxxxxxxxxx",
+    "api_keys": ["key1", "key2"]
+  },
+  "git": {
+    "repo": "https://github.com/USERNAME/agent-brain.git",
+    "author": {
+      "name": "Agent Name",
+      "email": "agent@brain.local"
+    }
+  },
+  "obsidian": {
+    "vault_path": "~/Obsidian/brain"
+  }
+}
+```
+
+### Agent读取配置的优先级
+
+```
+环境变量 > config.json > 默认值
+```
+
+Agent应优先从环境变量读取敏感信息，其次读取config.json，最后使用默认值。
+
+---
+
+## 首次配置引导
+
+### 引导流程
+
+Agent应在用户首次使用agent-brain时，主动引导完成以下配置：
+
+### Step 1: 创建GitHub仓库
+
+**Agent询问**：
+> "你需要为brain记忆库创建一个GitHub仓库。请告诉我你的GitHub用户名，我来帮你生成仓库地址。"
+
+**执行**：
+- 用户在GitHub创建空仓库 `agent-brain`
+- 或Agent提供命令引导用户执行
+
+### Step 2: 生成Personal Access Token
+
+**Agent询问**：
+> "为了让我能够推送代码到你的GitHub仓库，你需要生成一个Personal Access Token。你有现成的Token吗？如果没有，我教你生成：Settings → Developer settings → Personal access tokens → Generate new token"
+
+**注意事项**：
+- Token需要有 `repo` 权限
+- 建议设置过期时间
+- Token只显示一次，请妥善保存
+
+### Step 3: 配置config.json
+
+**Agent询问**：
+> "请告诉我以下信息，我会帮你创建配置文件："
+
+- 你的GitHub用户名是什么？
+- 你想把知识库放在本地的哪个目录？（例如：`~/Obsidian/brain`）
+- 你想用哪个Agent身份来使用这套记忆系统？（例如：小扣、CodeBuddy）
+
+**Agent执行**：
+```bash
+cp config/config.template.json config/config.json
+# 填充用户提供的真实信息
+```
+
+### Step 4: 设置Obsidian本地目录（可选）
+
+**Agent询问**：
+> "你想把Obsidian本地知识库放在哪里？如果暂时不需要本地同步，可以跳过这步。"
+
+### Step 5: 首次Git同步
+
+**Agent执行**：
+```bash
+cd brain
+git init
+git remote add origin https://github.com/USERNAME/agent-brain.git
+git add .
+git commit -m "Initial commit: agent-brain structure"
+git push -u origin main
+```
+
+### Step 6: 认知初始化
+
+**Agent询问**：
+> "为了让我更懂你，需要进行认知初始化。请回答以下问题（或让我从对话中自己观察）："
+
+- **基本信息**：姓名、常用称呼、职业
+- **沟通偏好**：喜欢简洁还是详细、喜欢什么风格
+- **核心目标**：当前最想解决的问题是什么
+- **边界设定**：有什么雷区需要注意
+
+**Agent执行**：
+- 根据用户回答，填充 `brain/00-共享认知/` 下的文件
+- L4/L5 内容需用户确认后再写入
+
+---
+
+## Agent自我适配
+
+### 适配流程
+
+每个Agent接入agent-brain时，应按以下顺序执行：
+
+```
+1. 读 index.md → 了解全局结构
+2. 读 config.json → 了解自己的身份配置
+3. 扫描 03-Agent空间/ → 了解其他Agent的工作状态
+4. 在 03/下创建自己的工作目录 → 建立Agent身份
+```
+
+### Agent身份建立
+
+```markdown
+brain/03-Agent空间/[Agent名称]/
+├── 当前任务.md      # 当前正在处理的任务
+├── 对话摘要/        # 历史对话摘要
+└── 状态.md          # Agent状态标记
+```
+
+### 环境适配表
+
+| 能力 | 扣子Agent | Claude Code | Cursor | 其他Agent |
+|------|-----------|-------------|--------|-----------|
+| **文件读写** | edit_file/read_file | 直接文件操作 | 直接文件操作 | 按平台能力 |
+| **Git操作** | bash（需云电脑） | 直接终端 | 内置终端 | 按平台能力 |
+| **Obsidian预览** | 不支持本地 | 需本地运行 | Obsidian插件 | 需本地运行 |
+| **语义搜索** | memory_search | 内置语义搜索 | grep/ripgrep | 按平台能力 |
+| **敏感信息** | 环境变量注入 | .env文件 | .env文件 | 按平台能力 |
+
+### 能力选择策略
+
+Agent应根据自身能力选择适配方案：
+
+1. **完整能力**：本地运行 + Git + Obsidian
+   - Claude Code / Cursor / 本地Agent
+   - 可使用全部功能
+
+2. **中等能力**：Git + 文件操作
+   - 扣子 + 云电脑
+   - Git同步通过bash实现
+
+3. **基础能力**：仅文件操作
+   - 纯扣子Agent
+   - Git同步依赖外部触发
+
+### 跨Agent协作
+
+Agent之间通过 `03-Agent空间/` 目录协作：
+
+```
+brain/03-Agent空间/
+├── 小扣/              # 扣子Agent
+│   ├── 当前任务.md    # 小扣正在做什么
+│   └── 对话摘要/      # 小扣的对话记录
+├── CodeBuddy/         # Claude Code
+│   └── 当前任务.md
+└── Kimi/              # Kimi
+    └── 当前任务.md
+```
+
+**协作规则**：
+- 开始新任务前，检查其他Agent的"当前任务.md"
+- 避免重复工作
+- 重要结论写入共享认知层，供所有Agent参考
+
+---
+
+## 公开分享考虑
+
+### 可分享内容
+
+以下内容可以纳入Git仓库公开分享：
+
+| 目录/文件 | 内容 | 风险等级 |
+|-----------|------|----------|
+| `brain/00-共享认知/` | 用户画像、行为模式、价值观 | 🟡 低风险 |
+| `brain/01-知识库/` | 知识沉淀、调研报告 | 🟢 无风险 |
+| `brain/03-Agent空间/` | Agent工作目录结构 | 🟢 无风险 |
+| `brain/04-待处理/` | 待办事项队列 | 🟢 无风险 |
+| `brain/index.md` | 目录索引 | 🟢 无风险 |
+| `brain/.gitignore` | Git忽略规则 | 🟢 无风险 |
+
+### 不可分享内容
+
+| 目录/文件 | 原因 | 处理方式 |
+|-----------|------|----------|
+| `config/config.json` | 包含Token/API Key | 已加入.gitignore |
+| `02-原始资料/*.pdf` | 可能含敏感信息 | 已加入.gitignore |
+| `02-原始资料/assets/` | 大文件 | 已加入.gitignore |
+
+### 公开分享检查清单
+
+分享前请确认：
+
+- [ ] config/config.json 不存在或为空
+- [ ] 00-共享认知/ 不含身份证号、银行卡号、密码
+- [ ] 原始资料目录不包含敏感PDF
+- [ ] .gitignore 已正确配置
+- [ ] Token已撤销或未使用真实Token
+
+### 大文件处理建议
+
+对于需要版本控制的大文件（如PSD、Illustrator源文件），建议：
+
+1. **Git LFS**：适合 <2GB 的大文件
+   ```bash
+   git lfs install
+   git lfs track "*.pdf"
+   ```
+
+2. **单独云存储**：适合 >2GB 的大文件
+   - Google Drive
+   - 阿里云OSS
+   - Dropbox
 
 ---
 
@@ -413,3 +1061,11 @@ brain/ 目录设计为可公开分享，但敏感信息必须隔离存放。
 | `modules/cognitive-memory/templates/index-template.md` | 创建或更新索引时 |
 | `modules/cognitive-memory/templates/memory-entry.md` | 创建新记忆条目时 |
 | `modules/wiki-builder/SKILL.md` | 需要 wiki 知识库操作时 |
+| `modules/git-sync/SKILL.md` | 需要 Git 同步操作时 |
+| `modules/ingest/SKILL.md` | 需要文档摄入（MinerU）时 |
+| `brain/01-知识库/知识管理/止水老师知识库方法论.md` | 理解切片策略和方法论时 |
+| `config/config.template.json` | 配置 agent-brain 时 |
+
+---
+
+*Agent Brain v1.0 — 让记忆成为你的第二大脑*

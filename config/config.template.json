@@ -7,8 +7,8 @@
     "repo": "https://github.com/YOUR_USERNAME/agent-brain.git",
     "branch": "main",
     "author": {
-      "name": "Your Name",
-      "email": "you@example.com"
+      "name": "Your Agent Name",
+      "email": "agent@brain.local"
     },
     "sync_on_start": true,
     "sync_on_end": true,
@@ -32,6 +32,19 @@
     "git_sync": {
       "enabled": true,
       "conflict_strategy": "mark_and_keep_both"
+    },
+    "ingest": {
+      "enabled": true,
+      "mode": "cli",
+      "output_base": "./brain/01-知识库",
+      "correction": {
+        "enabled": true,
+        "model": "auto"
+      },
+      "slicing": {
+        "auto": true,
+        "strategy": "auto"
+      }
     }
   },
   "agent": {
@@ -41,6 +54,6 @@
   },
   "sensitive": {
     "github_token": "YOUR_GITHUB_TOKEN_HERE",
-    "api_keys": []
+    "api_keys": ["YOUR_MINERU_API_KEY_HERE"]
   }
 }
