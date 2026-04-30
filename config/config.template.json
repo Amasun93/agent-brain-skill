@@ -1,0 +1,46 @@
+{
+  "brain": {
+    "path": "./brain",
+    "index_file": "index.md"
+  },
+  "git": {
+    "repo": "https://github.com/YOUR_USERNAME/agent-brain.git",
+    "branch": "main",
+    "author": {
+      "name": "Your Name",
+      "email": "you@example.com"
+    },
+    "sync_on_start": true,
+    "sync_on_end": true,
+    "auto_push_interval": 3600
+  },
+  "obsidian": {
+    "vault_path": "~/Obsidian/agent-brain",
+    "enable_preview": false
+  },
+  "modules": {
+    "cognitive_memory": {
+      "enabled": true,
+      "max_index_lines": 500,
+      "require_user_confirm_for_l4": true
+    },
+    "wiki_builder": {
+      "enabled": true,
+      "auto_ingest": false,
+      "lint_interval": 86400
+    },
+    "git_sync": {
+      "enabled": true,
+      "conflict_strategy": "mark_and_keep_both"
+    }
+  },
+  "agent": {
+    "id": "agent-id",
+    "name": "Agent Name",
+    "capabilities": ["file_ops", "git", "semantic_search"]
+  },
+  "sensitive": {
+    "github_token": "YOUR_GITHUB_TOKEN_HERE",
+    "api_keys": []
+  }
+}
