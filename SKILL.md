@@ -316,34 +316,20 @@ Encounter (接触) → Reflect (反思) → Experience (体验) → Realize (领
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Agent Brain                            │
+│                      Agent Brain v2                         │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
 │  │cognitive-    │    │  wiki-       │    │  git-sync    │  │
 │  │memory        │◄──►│  builder     │◄──►│              │  │
 │  │(认知层)      │    │  (知识层)    │    │  (同步层)    │  │
-│  │              │    │              │    │              │  │
-│  │管"你是谁"   │    │管"你知道什么"│    │管"怎么共享" │  │
-│  │              │    │              │    │              │  │
-│  │• 行为模式    │    │• 情境事件    │    │• 跨Agent同步 │  │
-│  │• 价值观认知  │    │• 知识条目    │    │• GitHub协作  │  │
-│  │• 核心特质    │    │• 交叉引用    │    │• Obsidian本地│  │
+│  └──────┬───────┘    └──────────────┘    └──────────────┘  │
+│         │                                                   │
+│  ┌──────┴───────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │memory-       │    │  ingest      │    │retrieval-    │  │
+│  │governance    │    │  (摄入层)    │    │engine        │  │
+│  │(治理层)      │    │              │    │(检索层)      │  │
 │  └──────────────┘    └──────────────┘    └──────────────┘  │
-│           ▲                  │                  │          │
-│           │                  │                  │          │
-│  ┌────────┴─────────────────┴──────────────────┘          │
-│  │                                                       │
-│  │  ┌──────────────┐                                     │
-│  └──│    ingest    │────────────────────────────────────┘
-│     │  (摄入层)    │                                     │
-│     │              │                                     │
-│     │管"怎么入库" │                                     │
-│     │              │                                     │
-│     │• MinerU提取  │                                     │
-│     │• AI校正      │                                     │
-│     │• 智能切片    │                                     │
-│     └──────────────┘                                     │
 │                                                             │
 │                    ┌──────────────────┐                    │
 │                    │   brain/ 目录     │                    │
@@ -353,7 +339,7 @@ Encounter (接触) → Reflect (反思) → Experience (体验) → Realize (领
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 四大模块协作关系
+### 六大模块协作关系 [v2更新]
 
 ```
 ingest (摄入) → wiki-builder (知识沉淀) → cognitive-memory (认知提炼) → git-sync (同步共享)
@@ -361,7 +347,18 @@ ingest (摄入) → wiki-builder (知识沉淀) → cognitive-memory (认知提�
      ▼                  ▼                      ▼                      ▼
  原始文档 →         Wiki条目 →             认知沉淀 →            跨平台共享
  Markdown切片       知识积累              行为/价值观模式
+
+                     ┌──────────────────────┐
+                     │                      │
+              ┌──────┴──────┐        ┌──────┴──────┐
+              │             │        │             │
+       retrieval-engine  memory-governance
+         (怎么取)          (怎么保证对)
 ```
+
+**v2 新增两个横切模块**：
+- **retrieval-engine**：三路融合检索 + Token 预算，解决"怎么取"的问题
+- **memory-governance**：反幻觉 + 证据积累 + Lint，解决"怎么保证对"的问题
 
 ### 提炼循环：认知层的反思引擎
 
@@ -485,8 +482,16 @@ agent-brain/
 │   │   └── SKILL.md
 │   ├── git-sync/                ← 同步模块
 │   │   └── SKILL.md
-│   └── ingest/                  ← 摄入模块（MinerU管线）
-│       └── SKILL.md
+│   ├── ingest/                  ← 摄入模块（MinerU管线）
+│   │   └── SKILL.md
+│   ├── retrieval-engine/        ← [v2新增] 检索引擎模块
+│   │   ├── SKILL.md
+│   │   └── templates/
+│   │       └── retrieval-strategy.md  # 检索策略模板
+│   └── memory-governance/       ← [v2新增] 记忆治理模块
+│       ├── SKILL.md
+│       └── templates/
+│           └── governance-config.md   # 治理配置模板
 ├── config/
 │   └── config.template.json      ← 配置模板
 └── brain/                       ← 记忆数据目录（Git管理）
@@ -500,12 +505,15 @@ agent-brain/
     │   └── entries/             ← 情境详情
     ├── boundary.md              ← 边界设定
     ├── pending.md               ← 待验证队列
-    └── log.md                   ← 操作日志
+    ├── log.md                   ← 操作日志
+    └── archive/                 ← [v2新增] 归档区
+        ├── by-layer/            # 按层级归档
+        └── by-date/             # 按时间归档
 ```
 
 ---
 
-## 三大模块职责
+## 六大模块职责
 
 ### cognitive-memory（认知层）
 
@@ -516,6 +524,9 @@ agent-brain/
 - PromptX 横切分类（知识/方案/经验/参考）
 - RoleX 提炼循环（Encounter → Reflect → Experience → Realize）
 - 反幻觉校验
+- [v2新增] 6个生命周期 Hook（自动捕获+压缩）
+- [v2新增] 4层压缩管线（L0→L1→L2→L3+）
+- [v2新增] Token 预算管理
 
 **存储**：`brain/cognition/` + `brain/boundary.md`
 
@@ -577,6 +588,52 @@ agent-brain/
 
 ---
 
+### retrieval-engine（检索层）[v2新增]
+
+**职责**：管"怎么取"——混合检索引擎，让记忆取得到、取得准、取得起。
+
+**核心能力**：
+- 三路融合检索：关键词（BM25风格）+ 语义（向量）+ 关联（图谱）
+- RRF 融合排序：三路结果按 Reciprocal Rank Fusion 合并
+- Token 预算管理：每次检索有 token 上限，先返回摘要再按需加载
+- 检索策略表：6种查询类型自动匹配最优检索路径
+- 平台适配层：扣子/Claude Code/Cursor/通用自动适配
+
+**存储**：无独立存储，读取 `brain/` 目录下的所有文件
+
+**触发**：任何需要检索记忆的场景
+
+**与cognitive-memory的协作**：
+- 新信号检测 → 检索相关已有认知，提供比对基础
+- 矛盾检测 → 三路检索相关认知，确保不遗漏
+- 证据积累 → 关联检索：找所有相关观察
+- Lint 检查 → 关联检索：验证引用完整性
+
+---
+
+### memory-governance（治理层）[v2新增]
+
+**职责**：管"怎么保证对"——反幻觉 + 证据积累 + Lint，可独立接入任何记忆系统的质量守门员。
+
+**核心能力**：
+- 治理 API：validate() / promote() / demote() / archive() / lint()
+- 治理策略配置：证据阈值、确认要求、矛盾策略、衰减规则
+- 治理仪表盘：记忆总量/分布、待验证/矛盾/孤儿统计、7天趋势
+- 作为插件接入：AgentMemory / Mem0 / 纯文件系统均可接入
+- 质量控制可复用：任何记忆系统都可以使用反幻觉四规则
+
+**存储**：`brain/archive/`（归档区）+ `brain/governance-dashboard.md`（仪表盘）
+
+**触发**：写入前（validate）、提升时（promote）、会话结束（lint_quick）、定期（lint_deep）
+
+**与cognitive-memory的协作**：
+- 写入前钩子：governance.validate() 校验后决定写入/拒绝/待验证
+- 提升前钩子：governance.promote() 检查证据/冲突/权限
+- 会话结束钩子：governance.lint(scope="recent") 快速检查
+- 定期检查钩子：governance.lint(scope="all") 深度检查
+
+---
+
 ## 环境适配指南
 
 不同 Agent 环境实现 agent-brain 能力的替代方案：
@@ -585,11 +642,14 @@ agent-brain/
 |------|-----------|-------------|-------------------|----------|
 | **文件读写** | `edit_file`/`read_file` | 直接文件操作 | 直接文件操作 | 按平台API |
 | **语义搜索** | `memory_search` | 内置语义搜索 | grep/ripgrep | 按平台能力 |
+| **关键词搜索** | `read_file`+匹配 | ripgrep | 内置搜索 | 文件遍历 |
+| **关联检索** | index.md交叉引用 | ripgrep+引用跳转 | Markdown链接 | 解析关联字段 |
 | **定时任务** | Calendar+Heartbeat | cron/systemd | 无（需手动） | 按平台能力 |
 | **Git操作** | `bash`（需云电脑） | 直接终端 | 内置终端 | 按平台能力 |
 | **子任务** | `sessions_spawn` | 子进程 | 无 | 按平台能力 |
 | **Obsidian预览** | 不支持 | 需本地运行 | 需本地运行 | 需本地运行 |
 | **MinerU提取** | 云电脑CLI / API模式 | 本地CLI | 本地CLI | 按算力选择 |
+| **治理校验** | 对话中Prompt | 脚本+LLM | 内联校验 | Prompt模板 |
 
 ### 各环境适配要点
 
@@ -671,6 +731,41 @@ agent-brain/
       "slicing": {
         "auto": true,
         "strategy": "auto"
+      }
+    },
+    "retrieval_engine": {
+      "enabled": true,
+      "rrf_k": 60,
+      "token_budget": {
+        "retrieval_default": 2000,
+        "file_index": 500,
+        "file_behavior": 2000,
+        "file_cognition": 1500,
+        "file_core": 800
+      },
+      "strategy": {
+        "default": "semantic",
+        "fallback": "keyword"
+      }
+    },
+    "memory_governance": {
+      "enabled": true,
+      "strictness": "standard",
+      "evidence_threshold": {
+        "L3": 3,
+        "L4": 3,
+        "L5": 3
+      },
+      "confirmation_required": ["L4", "L5"],
+      "auto_promote": ["L2_to_L3"],
+      "contradiction_strategy": "mark_and_keep",
+      "decay": {
+        "active_months": 6,
+        "transition_months": 12
+      },
+      "lint_schedule": {
+        "quick": "on_session_end",
+        "deep": "weekly"
       }
     }
   },
@@ -1182,9 +1277,29 @@ brain/03-Agent空间/
 | `modules/wiki-builder/SKILL.md` | 需要 wiki 知识库操作时 |
 | `modules/git-sync/SKILL.md` | 需要 Git 同步操作时 |
 | `modules/ingest/SKILL.md` | 需要文档摄入（MinerU）时 |
+| `modules/retrieval-engine/SKILL.md` | [v2新增] 需要记忆检索时 |
+| `modules/retrieval-engine/templates/retrieval-strategy.md` | [v2新增] 配置检索策略时 |
+| `modules/memory-governance/SKILL.md` | [v2新增] 需要记忆治理/质量控制时 |
+| `modules/memory-governance/templates/governance-config.md` | [v2新增] 配置治理策略时 |
 | `brain/01-知识库/知识管理/止水老师知识库方法论.md` | 理解切片策略和方法论时 |
 | `config/config.template.json` | 配置 agent-brain 时 |
 
 ---
 
-*Agent Brain v1.0 — 让记忆成为你的第二大脑*
+*Agent Brain v2.0 — 让记忆成为你的第二大脑*
+
+---
+
+## v1→v2 变更日志 [v2新增]
+
+| 变更 | 说明 | 模块 |
+|------|------|------|
+| +retrieval-engine | 混合检索引擎，三路融合（关键词+语义+关联）+ RRF排序 + Token预算 | retrieval-engine |
+| +memory-governance | 记忆治理插件，反幻觉四规则+证据积累+Lint+仪表盘，可独立接入其他系统 | memory-governance |
+| +auto-capture hooks | 6个生命周期Hook：on_session_start / on_new_observation / on_contradiction_detected / on_evidence_accumulated / on_session_end / on_periodic_lint | cognitive-memory |
+| +4层压缩管线 | L0原始观察→L1压缩观察→L2跨会话合并→L3+长期认知，Token节约90% | cognitive-memory |
+| +token预算 | 每文件上限（index<500, behavior<2000, cognition<1500, core<800）+检索预算2000+超限压缩 | 全局 |
+| 架构图更新 | 从4模块扩展到6模块，retrieval-engine和memory-governance作为横切层 | SKILL.md |
+| 模块职责更新 | cognitive-memory新增Hook+压缩+Token预算，新增retrieval-engine和memory-governance职责 | SKILL.md |
+| 配置扩展 | config.json新增retrieval_engine和memory_governance配置段 | config |
+| 归档区新增 | brain/archive/按层级和时间归档 | brain/ |
