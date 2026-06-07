@@ -11,6 +11,16 @@ description: 为AI角色搭建标准化Wiki知识库。触发词：搭建wiki知
 
 **核心理念：** Wiki 是一个**持久化、复利增长的产物**。知识只编译一次，之后持续更新维护，而非每次对话时重新推导。LLM 负责所有记账工作（交叉引用、摘要更新、矛盾标注），人类负责策划方向和提出好问题。
 
+### 与 agent-brain 其他模块的协作 [v2.2更新]
+
+wiki-builder 与 cognitive-memory、memory-governance 形成完整的"摄入 → 沉淀 → 治理"闭环：
+
+- **ingest 新素材** → 写入 `wiki/entries/`（原始资料，保持 v2.1 行为）
+- **写入关键引用** → 同步到 `SESSION-STATE.md` [v2.2 WAL]：长会话中后期可能要找回来的文件路径、关键决策点
+- **提炼新模式** → 转入 `pending/` 毛坯区 [v2.2 两阶段]，**不**直接写入认知层
+
+> WAL + 两阶段的完整规范见主 SKILL.md "核心机制" 章节。本模块**轻量引用**，不展开——wiki-builder 的核心职责仍是"持久化知识库"，不是会话工作区或信号暂存。
+
 ### 与 RAG 的本质区别
 
 | 对比项 | 传统 RAG（如 NotebookLM）| LLM Wiki |

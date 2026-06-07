@@ -22,7 +22,13 @@
     "cognitive_memory": {
       "enabled": true,
       "max_index_lines": 500,
-      "require_user_confirm_for_l4": true
+      "require_user_confirm_for_l4": true,
+      "two_stage_workflow": {
+        "_comment": "v2.2 新增：新信号先入 pending/ 毛坯区，证据达标后 promote 到 cognition/。关闭后保持 v2.1 行为（直接写 cognition/）",
+        "enabled": true,
+        "evidence_threshold": 3,
+        "auto_lint": "daily"
+      }
     },
     "wiki_builder": {
       "enabled": true,
@@ -44,6 +50,34 @@
       "slicing": {
         "auto": true,
         "strategy": "auto"
+      }
+    },
+    "memory_governance": {
+      "_comment": "v2.1 已有，v2.2 新增 v2_2_pending 段",
+      "enabled": true,
+      "evidence_threshold": {
+        "L3": 3,
+        "L4": 3,
+        "L5": 3
+      },
+      "confirmation_required": ["L4", "L5"],
+      "auto_promote": ["L2_to_L3"],
+      "contradiction_strategy": "mark_and_keep",
+      "decay": {
+        "active_months": 6,
+        "transition_months": 12
+      },
+      "lint_schedule": {
+        "quick": "on_session_end",
+        "deep": "weekly"
+      },
+      "v2_2_pending": {
+        "_comment": "v2.2 新增：两阶段工作流的 pending/ 扫描配置",
+        "enabled": true,
+        "evidence_threshold": 3,
+        "stale_days": 30,
+        "auto_lint_schedule": "daily",
+        "auto_promote_to": "behavior.md"
       }
     }
   },

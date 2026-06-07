@@ -329,8 +329,9 @@ status: 待验证
 ### 目录结构
 
 ```
-memory/
+brain/
 ├── index.md              # 主索引 [始终加载, <500字]
+├── SESSION-STATE.md      # [v2.2新增] 本次会话工作区（WAL）
 ├── cognition/            # L3-L5 认知沉淀
 │   ├── behavior.md       # L3 行为模式
 │   ├── cognition.md      # L4 价值观认知
@@ -341,7 +342,10 @@ memory/
 │       ├── L2-2024-001.md
 │       └── ...
 ├── boundary.md           # 边界设定: 目标/红线/约束
-├── pending.md            # 待验证队列
+├── pending.md            # 待验证队列 (v2.1 矛盾/待验证)
+├── pending/              # [v2.2新增] 毛坯区，所有新信号暂存
+│   ├── README.md
+│   └── YYYY-MM-DD-topic.md
 ├── log.md                # 操作日志 (审计轨迹)
 └── archive/              # 归档区
     ├── by-layer/         # 按层级归档
@@ -353,11 +357,122 @@ memory/
 | 层级 | 存储位置 | 始终加载 | 详情管理 |
 |-----|---------|---------|---------|
 | L1 State | 会话内存 | ❌ | 不持久化 |
-| L2 Situation | `memory/wiki/` | ✅ index | wiki-builder |
-| L3 Behavior | `memory/cognition/behavior.md` | ✅ index | cognitive-memory |
-| L4 Cognition | `memory/cognition/cognition.md` | ✅ index | cognitive-memory |
-| L5 Core | `memory/cognition/core.md` | ✅ index | cognitive-memory |
-| 边界设定 | `memory/boundary.md` | ✅ | cognitive-memory |
+| L2 Situation | `brain/wiki/` | ✅ index | wiki-builder |
+| L3 Behavior | `brain/cognition/behavior.md` | ✅ index | cognitive-memory |
+| L4 Cognition | `brain/cognition/cognition.md` | ✅ index | cognitive-memory |
+| L5 Core | `brain/cognition/core.md` | ✅ index | cognitive-memory |
+| 边界设定 | `brain/boundary.md` | ✅ | cognitive-memory |
+| **会话工作区** [v2.2] | `brain/SESSION-STATE.md` | ✅ WAL 恢复 | cognitive-memory |
+| **毛坯区** [v2.2] | `brain/pending/` | ❌ 按需 | 两阶段工作流 |
+
+### SESSION-STATE.md 会话工作区 [v2.2新增]
+
+**作用**：本次会话的"工作区 + 恢复层"，WAL 协议的核心载体。
+
+**完整规范见主 SKILL.md "核心机制 1：WAL 协议"**。本节是 cognitive-memory 模块视角的补充：
+
+#### 写入触发点
+
+```markdown
+## cognitive-memory 在哪些时点写 SESSION-STATE.md
+
+✅ on_session_start：创建/读取 SESSION-STATE.md
+✅ on_new_observation：捕获新信号时 append 一行
+✅ on_contradiction_detected：检测到矛盾时 append
+✅ on_evidence_accumulated：证据 +1 时 append
+✅ on_session_end：会话结束时的最终状态记录
+
+## 不写 SESSION-STATE.md 的时点
+✗ 触发 lint（写入 log.md 即可）
+✗ 触发 git push（不污染工作区）
+✗ 触发归档（不污染工作区）
+```
+
+#### 与 index.md 的关系
+
+| 文件 | 加载时机 | 作用 |
+|------|----------|------|
+| `brain/index.md` | 会话开始（始终加载） | 用户**长期**认知的索引 |
+| `brain/SESSION-STATE.md` | 会话开始（WAL 恢复） | 本次会话的**临时**状态 |
+| `brain/log.md` | 按需审计 | 跨会话的**操作记录** |
+
+**三者不重复**：index 是"用户是谁"，SESSION-STATE 是"我今天在做什么"，log 是"历史上做过什么"。
+
+#### 平台适配
+
+| 平台 | SESSION-STATE.md 支持 | 降级方案 |
+|------|----------------------|----------|
+| **扣子（有文件能力）** | ✅ 完整支持 | — |
+| **Claude Code** | ✅ 完整支持 | — |
+| **Cursor** | ✅ 完整支持 | — |
+| **纯对话 Agent** | ⚠️ 降级 | 用对话内 SESSION-STATE 提示框替代 |
+
+---
+
+### pending/ 毛坯区 [v2.2新增]
+
+**作用**：所有新信号的"暂存区"，两阶段工作流的第一阶段。
+
+**完整规范见主 SKILL.md "核心机制 2：先毛坯后蒸馏"**。本节是 cognitive-memory 模块视角的补充：
+
+#### 写入触发点
+
+```markdown
+## cognitive-memory 在哪些时点写 pending/
+
+✅ on_new_observation：检测到新信号 → 先写 pending/，**不**直接进 cognition
+✅ 矛盾检测 → 矛盾条目也暂存 pending/（与 v2.1 pending.md 区分）
+✅ 跨情境观察 → 写一条 pending/ 文件
+
+## 不写 pending/ 的时点
+✗ 已确认的 L3+ 提炼（直接走 promote 流程）
+✗ L2 情境事件（仍写 wiki/entries/）
+✗ 已被验证的旧条目（直接更新）
+```
+
+#### 写入流程
+
+```text
+新信号进来
+  ↓
+判断 1：是否 L2 事件？ → wiki/entries/（保持原行为）
+判断 2：是否 L3+ 提炼？ → 走 governance.promote() 流程（不经过 pending/）
+判断 3：是否新信号/待验证？ → pending/{日期-主题}.md ← 默认路径
+  ↓
+返回文件路径 + 证据计数
+```
+
+#### 最小文件规范
+
+```markdown
+---
+topic: [简短主题名]
+date: YYYY-MM-DD
+evidence_count: 1/3
+related: [cognition/behavior.md#相关条目]
+status: 毛坯
+---
+
+## 观察记录
+- 时间/情境/原话/后续
+
+## 初步假设
+[待验证]
+
+## 待验证问题
+- [ ]
+```
+
+**最小信息**：日期 + 主题 + ≥1 段观察。其他字段可选。
+
+#### 与 v2.1 pending.md 的边界
+
+| 路径 | 角色 | 何时写 |
+|------|------|--------|
+| `brain/pending.md` | 矛盾 / 待验证 L2+ 队列 | on_contradiction_detected 触发 |
+| `brain/pending/{日期-主题}.md` | 毛坯区（所有新信号） | on_new_observation 触发 |
+
+> **简记**：pending.md = 已认定是认知层候选；pending/ = 暂存一切新信号。
 
 ### 与现有文件的关系
 
@@ -1265,25 +1380,38 @@ v2 引入 6 个生命周期 Hook，借鉴 AgentMemory 的自动捕获机制但�
 **执行逻辑**：
 
 ```markdown
-## on_new_observation 执行清单
+## on_new_observation 执行清单 [v2.2 更新默认行为]
 
 1. 检测新信号类型和行为模式
 2. governance.validate(新观察) → 校验质量
    - pass → 进入步骤3
    - fail → 丢弃或降级
    - needs_review → 进入步骤3并标记"待验证"
-3. 判断写入位置:
-   - L2 情境事件 → wiki/entries/L2-YYYY-XXX.md
-   - 待验证信号 → pending.md（标记 1/3）
-   - 确认的信号 → 对应认知层文件
-4. 更新 index.md 索引
-5. 追加 log.md
+3. 判断写入位置 [v2.2 默认先写 pending/]:
+   - L2 情境事件 → wiki/entries/L2-YYYY-XXX.md（保持 v2.1）
+   - **新信号/待验证 → pending/{日期-主题}.md [v2.2 默认]**
+   - 已确认的 L3+ 提炼 → cognition/behavior.md（用户明确确认后）
+   - 矛盾/待验证 L2+ → pending.md（v2.1 待验证队列）
+4. [v2.2 新增] 同步 append 一行到 SESSION-STATE.md（WAL 写入）
+5. 更新 index.md 索引
+6. 追加 log.md
 ```
 
 **时间限制**：<3秒（不能打断对话节奏）
 
+**v2.2 行为变更说明**：
+
+| 行为 | v2.1 | v2.2 默认 | v2.2 可关闭 |
+|------|------|-----------|-------------|
+| 新信号写入位置 | 直接进 cognition/ 或 pending.md | 先写 `pending/{日期-主题}.md` | config `two_stage_workflow.enabled = false` 可回退 |
+| 写入 cognition/ 的时机 | on_new_observation 时 | 待 lint promote 或用户明确确认 | 同 v2.1 |
+| 同步写 SESSION-STATE.md | 无 | **默认开启** | 平台不支持文件时降级 |
+
+> 详见主 SKILL.md "核心机制 2：先毛坯后蒸馏" 的完整规范。
+
 **产出**：
-- 新条目写入对应文件
+- 新条目写入对应文件（v2.2 默认是 `pending/`）
+- SESSION-STATE.md 工作区更新（v2.2）
 - 索引更新
 - 操作日志
 
@@ -1401,9 +1529,15 @@ v2 引入 6 个生命周期 Hook，借鉴 AgentMemory 的自动捕获机制但�
 5. 执行快速 Lint:
    - 悬空引用检查
    - 索引一致性检查
-6. 更新 index.md
-7. 追加 log.md
-8. 触发 git-sync push（如启用）
+6. **轻整合步骤（v2.1新增）**:
+   - 扫描最近 7 天的 `david-brain/05-待验证/` 文件
+   - 触发条件: 文件数 ≥ 5 个（少于 5 个不整合）
+   - 聚类标准: 关键词重叠 ≥ 3 个 → 视为同一主题
+   - 聚类后: 每个主题生成 1 行摘要
+   - 写入: `david-brain/04-Agent空间/小扣/主题摘要-{YYYY-MM-DD}.md`
+7. 更新 index.md
+8. 追加 log.md
+9. 触发 git-sync push（如启用）
 ```
 
 **时间限制**：<30秒
@@ -1477,6 +1611,18 @@ on_new_observation ──────→ on_contradiction_detected
                     ▼
             on_periodic_lint (Calendar触发)
 ```
+
+### v2.1 轻整合步骤（on_session_end 新增）
+
+**借鉴**：Letta Sleeptime 后台整合 | **轻量化**：复用 keywords() 字符串方法（< 1秒），不引入新架构
+
+**规范**：
+- 触发：on_session_end 时 `david-brain/05-待验证/` 7天内文件数 ≥ 5（少于则跳过）
+- 聚类：关键词重叠 ≥ 3 个 → 同一主题（关键词提取复用 memory-governance 的 keywords() 函数）
+- 输出：每主题 1 行摘要 `主题词: {top1}+{top2}+{top3} | 文件数: N`
+- 写入：`david-brain/04-Agent空间/小扣/主题摘要-{YYYY-MM-DD}.md`
+
+**对比 Letta**：独立后台进程跑 LLM 摘要（重）→ 复用 keywords()（轻，零新依赖，牺牲润色质量换工程化）
 
 **关键约束**：
 - 所有 Hook 都是轻量的，不引入额外进程

@@ -312,6 +312,262 @@ Encounter (接触) → Reflect (反思) → Experience (体验) → Realize (领
 
 ---
 
+## 核心机制 [v2.2新增]
+
+v2.2 引入两个互补的核心机制：**WAL 协议** 解决"长会话 / Context 压缩丢信息"，**两阶段工作流** 解决"新信号直接占 L3/L4 槽位"。两者都遵循"先粗后精、留有缓冲"的思想，是 agent-brain 应对日常使用痛点的关键升级。
+
+> 这两个机制是**正交的**——WAL 管"会话内怎么不丢东西"，两阶段管"新信号怎么不污染认知层"。可独立启用、独立关闭。
+
+---
+
+### 核心机制 1：WAL 协议（Write-Ahead Log，先写后回）
+
+#### 为什么需要 WAL
+
+Agent 长期使用中三个最常见的"丢信息"场景：
+
+| 场景 | 后果 |
+|------|------|
+| **Context 压缩** | 早期的关键决策、用户偏好被压缩掉，Agent "忘了"自己答应过什么 |
+| **跨多次请求** | 长任务分多次执行时，上下文不连贯 |
+| **会话后期回看** | 无法快速回到早期的某个承诺或决定 |
+
+WAL 协议是**数据库领域经典模式**的 Agent 化变体——事务先写日志再执行，所有关键状态变更都有迹可循。落到 agent-brain 上就是：**先写 SESSION-STATE.md，再回复用户**。
+
+#### SESSION-STATE.md 是什么
+
+`brain/SESSION-STATE.md` 是**本次会话的工作区文件**：
+
+- **会话开始时**：新建（或从上次恢复）
+- **会话进行中**：每次重大决策 / 新信息 → **先** append 到 SESSION-STATE.md，**再**继续对话
+- **会话结束时**：关键内容 → 提交到 `pending/` 或 `cognition/`，SESSION-STATE.md 清空或归档
+
+**关键属性**：
+- ⚡ **可丢弃**——SESSION-STATE.md 是工作区，不是最终沉淀
+- 🔄 **可恢复**——下次会话开始时读它，能立刻回到上次状态
+- 📝 **追加即可**——不需要精心结构，"时间 + 事件" 流水账足够
+- 🚫 **不替代正式记忆**——只作为缓冲，重要内容必须 promote 到 cognition/
+
+#### 写入顺序硬性约束
+
+```text
+会话开始：
+  1. git pull
+  2. 读取 brain/index.md（用户核心认知）
+  3. 检查/创建 brain/SESSION-STATE.md（本次会话工作区）
+  4. 再开始回复用户 ← 关键！不能跳过
+
+会话进行中：
+  - 重大决策 / 新信息 / 关键引用 → 立即 append 到 SESSION-STATE.md
+  - 不依赖"我会记住"
+
+会话结束：
+  - SESSION-STATE.md 关键内容 → pending/ 或 cognition/
+  - SESSION-STATE.md 清空（或保留为最近一次的工作区）
+  - git commit
+```
+
+#### 写入什么 / 不写什么
+
+| 类别 | 写 SESSION-STATE.md？ | 原因 |
+|------|---------------------|------|
+| 用户明确表达的新偏好 | ✅ 必须 | 后续会话要用 |
+| 重大决策（选了 A 不选 B） | ✅ 必须 | 后续解释/回看 |
+| 任务进度（"已完成 1/3"） | ✅ 必须 | 跨请求续接 |
+| 关键引用 / 文件路径 | ✅ 必须 | 长会话后期找不到 |
+| 临时调试信息 | ⚪ 可选 | 可能有用 |
+| 闲聊/寒暄 | ❌ 不写 | 噪音 |
+| 已完整记录的写入操作 | ❌ 不写 | log.md 已经有了 |
+
+#### 写多长合适
+
+**单条 append 控制在 1-3 行**。示例：
+
+```markdown
+## 14:32 [user] "我比较喜欢简短的回答，能加粗的地方加粗就行"
+## 14:35 [decision] 输出格式定为：短答案+关键加粗，不堆细节
+## 14:40 [task-progress] v2.2-minor 升级，已完成 Step 1-3
+## 15:10 [ref] 关键设计稿 = david-brain/06-已沉淀/2026-06-07_v2.2-minor升级设计稿_WAL+两阶段.md
+```
+
+**不要写成完美结构**——这是工作区，**有 > 完美**。
+
+#### 故障恢复场景
+
+| 场景 | 怎么恢复 |
+|------|----------|
+| Context 压缩后丢失 | 读 SESSION-STATE.md，从最近决策点继续 |
+| 用户突然说"你忘了我说过 X" | 翻 SESSION-STATE.md，定位到 X 的原始记录 |
+| Agent 误删 / 改错了什么 | SESSION-STATE.md 里有"已决定 Y"的痕迹 |
+| 多设备切换 | git pull 后 SESSION-STATE.md 是最新的工作区 |
+
+#### WAL 的局限
+
+- SESSION-STATE.md **不参与反幻觉校验**——它是工作区，不是认知层
+- 不替代 `pending.md`（矛盾/待验证队列）——两者职责不同
+- 不替代 `log.md`（操作日志）——SESSION-STATE.md 是会话内，log.md 是跨会话审计
+- 不是所有 Agent 平台都支持文件读写——无文件能力的平台可降级为对话内 SESSION-STATE 提示
+
+---
+
+### 核心机制 2：先毛坯后蒸馏（两阶段工作流）
+
+#### 为什么需要两阶段
+
+v2.1 的"问题"：新信号进来时，Agent 直接写入 `cognition/` 某个层级（L3/L4），**一次观察就占了一个认知槽位**。结果：
+
+- 真实信号和噪声信号混在一起
+- L3 行为层塞满了一次性表达
+- 评测员反馈"模板空壳、缺案例"——本应该是案例池的 cognition/ 反而是空壳
+
+**两阶段工作流的解法**：新信号先入"毛坯区"（`pending/`），**不直接进 cognition/**；每日/定期 lint 时再 promote/demote。
+
+#### pending/ 目录是什么
+
+```
+brain/pending/                       # 🆕 v2.2 毛坯区
+├── README.md                        # 本说明文件
+├── 2026-06-07-决策冷静期.md         # 按日/主题归类
+├── 2026-06-07-周日推送偏好.md
+└── ...
+```
+
+**每个文件 = 一个待验证主题**，包含：
+
+- 原始观察（用户原话 / 行为记录）
+- 初步假设（可能是什么模式）
+- 证据计数（当前 1/3、2/3...）
+- 关联引用（涉及哪些已有认知）
+
+#### 与 pending.md 的区别
+
+`brain/pending.md`（v2.1 已有）= **矛盾 / 待验证的 L2+ 队列**（Agent 已决定"这是认知层候选"但证据不足）
+
+`brain/pending/`（v2.2 新增）= **所有新信号的毛坯区**（包括"可能不是认知层、但先记下再说"）
+
+| 维度 | pending.md（v2.1） | pending/ 目录（v2.2） |
+|------|---------------------|----------------------|
+| 角色 | 已认定为候选，需补充证据 | 全部新信号的暂存区 |
+| 存储 | 单文件 Markdown 列表 | 每主题一文件 |
+| 来源 | cognitive-memory 的 on_observation | 任何新信号（用户表达/Agent 观察/外部输入） |
+| 出口 | 证据达标 → promote 到 cognition | 主题明确 → 转 pending.md；不重要 → 归档 |
+
+#### 两阶段流程
+
+```text
+【阶段 1：捕获（实时）】
+  新信号进来
+    ↓
+  写到 brain/pending/{日期-主题}.md（毛坯）
+    ↓
+  证据计数 +1（同一主题再次出现）
+
+【阶段 2：蒸馏（lint 时）】
+  governance.lint() 扫描 pending/
+    ↓
+  判定 1：3 次相似观察 + 无反例 → promote 到 pending.md（待验证队列）
+  判定 2：明确主题 + 用户确认 → 直接 promote 到 cognition/behavior.md
+  判定 3：反例出现 / 长期无进展 → demote 或归档
+  判定 4：一次性表达 / 噪声 → 归档，删 pending/ 文件
+```
+
+#### 写入 pending/ 的最小规范
+
+```markdown
+---
+topic: 决策冷静期
+date: 2026-06-07
+evidence_count: 1/3
+related: [behavior.md#决策风格]
+status: 毛坯
+---
+
+## 观察记录
+
+- **时间**: 2026-06-07 14:30
+- **情境**: 讨论保险方案
+- **原话**: "我需要再想想"
+- **后续**: 用户 2 天后才回来决定
+
+## 初步假设
+
+用户做决策前需要冷静期，不是真的"想想"
+
+## 待验证
+
+- 是否每次重大决策都需要？
+- 冷静期一般是几天？
+```
+
+**注意**：这就是一个 v2.2 的"案例池"——pending/ 文件本身就是评测员要的"真实新信号展示区"。
+
+#### 手动 promote / demote
+
+如果用户**明确确认**或**明确否定**某条观察，可以跳过 lint 等待：
+
+```text
+# 显式 promote（用户说"对，我就是这样"）
+governance.promote(pending/2026-06-07-决策冷静期.md, target="L3")
+  → 写入 behavior.md
+  → 记录到 log.md
+  → 归档 pending/ 文件
+
+# 显式 demote（用户说"不是这样"）
+governance.demote(pending/2026-06-07-决策冷静期.md, reason="用户否认")
+  → 标注为"已否定"
+  → 归档
+```
+
+#### 两阶段的配置开关
+
+如果你的 Agent 习惯直接写 cognition/，可以**关闭两阶段**（保持 v2.1 行为）：
+
+```json
+{
+  "modules": {
+    "cognitive_memory": {
+      "two_stage_workflow": {
+        "enabled": true,        // false = 直接写 cognition/（v2.1 行为）
+        "evidence_threshold": 3, // 几次观察后 promote
+        "auto_lint": "daily"     // 何时扫描 pending/
+      }
+    }
+  }
+}
+```
+
+> 默认开启两阶段。如果你的 Agent 已经有成熟的提炼流程，可关闭。
+
+---
+
+### 两个机制如何协同
+
+```text
+会话开始：
+  on_session_start 触发
+    ↓
+  1. 读 SESSION-STATE.md（WAL 恢复）    ← 核心机制 1
+  2. 读 brain/index.md
+    ↓
+  开始回复用户
+
+会话进行中：
+  每次新信号：
+    ↓
+  1. 先 append 到 SESSION-STATE.md        ← WAL
+  2. 写到 pending/{日期-主题}.md          ← 两阶段
+  3. 再继续对话
+
+会话结束：
+  1. SESSION-STATE.md 关键内容 → pending/ 或 cognition/  ← 双向收尾
+  2. governance.lint() 扫描 pending/  ← 两阶段蒸馏
+  3. git commit
+```
+
+**关键洞察**：WAL 是**会话内**的"工作区 + 恢复层"；两阶段是**会话间**的"暂存 + 蒸馏"。前者保证"会话内不丢"，后者保证"会话间不污染"。
+
+---
+
 ## 架构总览
 
 ```
@@ -1286,7 +1542,7 @@ brain/03-Agent空间/
 
 ---
 
-*Agent Brain v2.0 — 让记忆成为你的第二大脑*
+*Agent Brain v2.2 — 让记忆成为你的第二大脑*
 
 ---
 
@@ -1302,4 +1558,34 @@ brain/03-Agent空间/
 | 架构图更新 | 从4模块扩展到6模块，retrieval-engine和memory-governance作为横切层 | SKILL.md |
 | 模块职责更新 | cognitive-memory新增Hook+压缩+Token预算，新增retrieval-engine和memory-governance职责 | SKILL.md |
 | 配置扩展 | config.json新增retrieval_engine和memory_governance配置段 | config |
+
+## v2.0→v2.1 变更日志 [v2.1新增]
+
+**设计原则**：取长补短（借鉴 Hindsight/Graphiti/Letta 精华）+ 轻量级（不引入 ML/AI/外部依赖）+ 工程化优先。
+
+| 变更 | 说明 | 借鉴来源 | 改动行数 |
+|------|------|----------|----------|
+| **+双字段** `confidence_score` + `last_updated` | 治理 API 元数据层加 2 字段：promote→0.8 / demote→0.3 / validate pass→保持 / 90天无更新→自动 demote | Hindsight opinion network | ~60 行 |
+| **+lint 实体合并** 改字符串相似度 | Levenshtein ≤ 3 字符 OR Jaccard ≥ 0.7（字符串）/ 0.5（关键词） | Graphiti MinHash+LSH | ~80 行（含算法） |
+| **+on_session_end 轻整合** | 7天 05-待验证/ 文件 ≥ 5 个触发聚类，关键词重叠 ≥ 3 → 主题摘要 | Letta Sleeptime | ~20 行 |
+| 配置 v2_1_fields + v2_1_lint 段 | governance config 新增两个 v2.1 段 | — | ~10 行 |
+| 文档页脚升级 | v2.0 → v2.1 | — | ~5 行 |
+| **总改动** | | | **≤ 200 行** |
 | 归档区新增 | brain/archive/按层级和时间归档 | brain/ |
+
+## v2.1→v2.2 变更日志 [v2.2新增]
+
+**设计原则**：文档+模板升级，零核心代码改动，向后兼容（v2.1 配置文件仍可工作）。解决"Context 压缩丢信息"和"新信号直接占 L3/L4 槽位"两大痛点。
+
+| 变更 | 说明 | 借鉴来源 | 改动范围 |
+|------|------|----------|----------|
+| **+WAL 协议** | 会话开始先读/写 `brain/SESSION-STATE.md` 再回复用户，Context 压缩后能恢复关键决策 | No1Lobster SESSION-STATE + ELM WAL | SKILL.md / 3 模块 / README / 新模板 ~250 行 |
+| **+两阶段工作流** | 新信号先入 `brain/pending/` 毛坯区，证据 ≥ 3 次才 promote 到 cognition/ | No1Lobster "30 秒任务捕获 + 后蒸馏" | SKILL.md / cognitive-memory / memory-governance / 新模板 ~200 行 |
+| **+SESSION-STATE.md 模板** | `templates/brain-init/SESSION-STATE.md` 含写入规范和示例 | — | 新增模板 ~50 行 |
+| **+pending/ 目录模板** | `templates/brain-init/pending/README.md` + `.gitkeep` | — | 新增模板 ~120 行 |
+| **+memory_governance.lint 新 scope** | `pending` / `session_state` 两种新检查范围 | — | memory-governance ~70 行 |
+| **+on_new_observation 默认行为变更** | 新信号先写 pending/ 而非 cognition/，可通过 `two_stage_workflow.enabled = false` 回退 | — | cognitive-memory ~15 行 |
+| **README 案例扩充** | 从 3 案例 → 5 案例（新增"WAL 救援长会话" + "pending 沉淀案例"） | — | README ~30 行 |
+| **配置 v2_2_pending 段** | governance config 新增两阶段工作流配置 | — | config.template.json ~10 行 |
+| **总改动** | 0 行 Node.js 代码，~750 行文档+模板 | | **~20% 文档增量** |
+| **向后兼容** | 旧用户用 v2.1 配置仍能工作（WAL + 两阶段默认开启但可关闭） | | |

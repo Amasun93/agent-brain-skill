@@ -16,6 +16,10 @@ agent-brain v1 的质量控制能力（反幻觉四规则、证据积累、矛�
 | **无治理 API** | 质量控制散落在各处，没有统一的调用接口 | 难以批量检查、难以自动化 |
 | **无仪表盘** | 不知道记忆系统的整体健康状况 | 矛盾累积、孤儿条目、悬空引用悄然增长 |
 
+### v2.1 的轻量增强（v2.1新增）
+
+借鉴 Hindsight/Graphiti/Letta 精华，工程化优先 — 元数据加 2 字段 + lint 改字符串相似度，零新依赖。
+
 ### v2 的治理方案
 
 把 v1 的质量控制能力抽取为独立的治理层，提供标准 API，任何记忆系统都可接入：
@@ -82,8 +86,26 @@ agent-brain v1 的质量控制能力（反幻觉四规则、证据积累、矛�
     }
   ],
   "confidence": "M",
+  "confidence_score": 0.5,
+  "last_updated": "2026-06-07T03:10:00+08:00",
   "suggestions": ["建议标注言行不一致的具体场景"]
 }
+```
+
+**v2.1 新增双字段说明**：
+
+```markdown
+## 双字段定义（v2.1新增）
+
+### confidence_score: 0-1（number）
+- **默认 0.5** | promote → 0.8 | demote → 0.3
+- validate() pass → 保持 | needs_review → -0.1（下限 0.1）| fail → 0.1
+- **重要**: 元数据，不用 ML 推理
+
+### last_updated: ISO 8601（string，如 "2026-06-07T03:10:00+08:00"）
+- **默认**: 写入时填充 now()
+- 任何治理操作（validate/promote/demote/archive）都刷新
+- **90天衰减**: validate() 检测到 `last_updated > 90天` → 自动 demote（pending 条目除外）
 ```
 
 **校验逻辑详解**：
@@ -114,6 +136,12 @@ agent-brain v1 的质量控制能力（反幻觉四规则、证据积累、矛�
 - 检查: 是否使用绝对化词汇
 - 通过: 使用可逆表述（"倾向于""目前看来"）
 - 不通过: 替换为可逆表述
+
+### 规则5 (v2.1新增): 时间衰减校验
+- 检查: `last_updated` 距离 now 是否 > 90 天？
+- 通过: ≤ 90 天（保持现状）
+- 不通过: **自动 demote**（调用 demote() 并记录 reason = "90天无更新，自动衰减"）
+- 跳过: pending.md 中的待验证条目（避免误杀正在积累的信号）
 ```
 
 **平台适配**：
@@ -144,6 +172,8 @@ agent-brain v1 的质量控制能力（反幻觉四规则、证据积累、矛�
     "no_contradiction": true,
     "permission": "auto"
   },
+  "confidence_score": 0.8,
+  "last_updated": "2026-06-07T03:10:00+08:00",
   "actions": [
     "写入 behavior.md",
     "更新 index.md 索引",
@@ -151,6 +181,8 @@ agent-brain v1 的质量控制能力（反幻觉四规则、证据积累、矛�
   ]
 }
 ```
+
+**v2.1 promote() 自动行为**：执行成功时自动写入 `confidence_score: 0.8` + `last_updated: now()`，无需调用方手动传。
 
 **提升规则**：
 
@@ -204,10 +236,16 @@ agent-brain v1 的质量控制能力（反幻觉四规则、证据积累、矛�
   "to_level": "L2",
   "reason": "出现反例：紧急场景下快速决策",
   "timestamp": "2024-02-01T10:30:00+08:00",
+  "confidence_score": 0.3,
+  "last_updated": "2026-06-07T03:10:00+08:00",
   "original_content_preserved": true,
   "archive_path": "brain/archive/by-layer/L3-B-003.md"
 }
 ```
+
+**v2.1 demote() 自动行为**：
+- 主动调用 → `confidence_score: 0.3` + `last_updated: now()`
+- 被动触发（validate 检测到 `last_updated > 90 天`）→ 自动 demote，reason = "90天无更新，自动衰减"
 
 **降级规则**：
 
@@ -284,7 +322,16 @@ recoverable: true
 
 ### 2.5 lint(scope) —— 健康检查
 
-**输入**：检查范围（all / specific-layer / specific-file）
+**输入**：检查范围（all / specific-layer / specific-file / pending [v2.2新增]）
+
+**v2.2 新增 scope 选项**：
+
+| scope | 检查范围 | 何时用 |
+|-------|----------|--------|
+| `all` | 全部 | 深度 lint（每周） |
+| `recent` | 最近 7 天 | 会话结束 lint |
+| `pending` [v2.2] | `brain/pending/` 目录 | 两阶段工作流蒸馏 |
+| `session_state` [v2.2] | `brain/SESSION-STATE.md` | WAL 健康度 |
 
 **输出**：检查报告
 
@@ -369,6 +416,135 @@ recoverable: true
 - 检测条目是否符合写入规范
 - 缺少 id/layer/keywords/status 字段
 - 严重程度: 低（不影响功能）
+
+### 9 (v2.2新增). pending/ 毛坯区扫描 [两阶段工作流]
+
+**检查范围**：`brain/pending/` 目录下所有 `YYYY-MM-DD-*.md` 文件
+
+**检查动作**：
+
+```markdown
+## pending/ 扫描流程（on_periodic_lint 触发）
+
+1. 扫描 brain/pending/ 目录下所有文件
+2. 对每个文件执行判定:
+   a. **主题明确 + 证据 ≥ 阈值**（默认 3 次）→ promote 到 cognition/behavior.md
+   b. **主题明确 + 证据不足** → 转 pending.md（v2.1 待验证队列）
+   c. **反例出现** → demote，标注"已否定"，归档
+   d. **长期无进展（>30天）** → demote，归档
+   e. **一次性表达 / 噪声** → 直接归档，删 pending/ 文件
+3. 输出处理报告
+4. 追加 log.md
+```
+
+**证据积累判定**（轻量字符串相似度，复用 v2.1 算法）：
+
+```javascript
+// pending/ 内相似度去重 — 复用 v2.1 lint_entity_merge
+// Levenshtein 距离 ≤ 3 字符 OR 关键词 Jaccard ≥ 0.5 → 视为同一主题
+// evidence_count += 1
+// 当 evidence_count ≥ 3 → 触发 promote
+```
+
+**配置项**：
+
+```json
+{
+  "governance": {
+    "v2_2_pending": {
+      "enabled": true,                  // false = 关闭两阶段
+      "evidence_threshold": 3,          // 几次观察后 promote
+      "stale_days": 30,                 // 多少天无进展 → demote
+      "auto_lint_schedule": "daily",    // 何时扫描
+      "auto_promote_to": "behavior.md"  // promote 目标（默认 L3）
+    }
+  }
+}
+```
+
+**严重程度**: 中（pending/ 堆积本身不影响认知准确性，但影响"新信号可见性"）
+
+### 10 (v2.2新增). SESSION-STATE.md 状态检查
+
+**检查范围**：`brain/SESSION-STATE.md`
+
+**检查动作**：
+
+```markdown
+## SESSION-STATE.md 状态检查
+
+1. 文件存在？否 → 警告"未启用 WAL"
+2. 文件大小 > 50KB？ → 警告"工作区膨胀，会话结束时未清理"
+3. 最后一次写入 > 7 天？ → 警告"过期工作区未清理"
+4. 内容是否包含已 promote 的条目引用？ → 提示可清理
+```
+
+**严重程度**: 低（不影响核心功能，但影响"会话恢复体验"）
+
+### 9 (v2.1新增). 实体合并 — 字符串相似度去重
+- 借鉴: Graphiti MinHash+LSH dedup
+- 轻量化: 用 Node 内置字符串方法 + Jaccard 关键词集合
+- 目标: 检测并合并重复实体（如"决策冷静期" vs "决策冷静期需求"）
+- 严重程度: 中（重复实体污染索引）
+
+**v2.1 字符串相似度算法**（伪代码 + 阈值定义）：
+
+```javascript
+// lint_entity_merge.js — v2.1 实体合并（零新依赖，纯 Node.js 内置）
+
+// 1) Levenshtein 距离（编辑距离）
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1] + (a[i-1]===b[j-1]?0:1));
+  }
+  return dp[m][n];
+}
+
+// 2) 关键词集合（中文按字符 + 简单停用词过滤）
+const STOP = new Set(['的','了','在','是','我','你','他','她','它','和','与','或','及']);
+function keywords(text) {
+  return new Set(text.toLowerCase().replace(/[，。、！？；：""''【】《》()\[\]]/g, ' ').split(/\s+/)
+    .filter(w => w && !STOP.has(w)));
+}
+
+// 3) Jaccard 相似度
+function jaccard(setA, setB) {
+  const inter = [...setA].filter(x => setB.has(x)).length;
+  const union = new Set([...setA, ...setB]).size;
+  return union ? inter / union : 0;
+}
+
+// 4) v2.1 合并判定（阈值定义）
+// 字符串: Levenshtein 距离 ≤ 3 字符  OR  Jaccard ≥ 0.7
+// 关键词: Jaccard ≥ 0.5
+// 满足任一条件 → 合并候选
+function shouldMerge(a, b) {
+  const nameA = a.title || a.id, nameB = b.title || b.id;
+  const dist = levenshtein(nameA, nameB);
+  const strSim = 1 - dist / Math.max(nameA.length, nameB.length, 1);
+  const passStr = dist <= 3 || strSim >= 0.7;
+  const passKw = jaccard(keywords(a.content||''), keywords(b.content||'')) >= 0.5;
+  return passStr || passKw;
+}
+
+// 5) lint() 实体合并主流程（O(n²) 实体对比较）
+function lintEntityMerge(entries) {
+  const pairs = [];
+  for (let i = 0; i < entries.length; i++)
+    for (let j = i+1; j < entries.length; j++)
+      if (entries[i].layer === entries[j].layer && shouldMerge(entries[i], entries[j]))
+        pairs.push([entries[i].id, entries[j].id]);
+  return pairs;
+}
+```
+
+**复杂度**: O(n²) 实体对（n ≤ 1000 可接受）+ O(mn) Levenshtein dp table | **零外部依赖** | **阈值集中**在 shouldMerge() 顶部
+
+**v2.0 → v2.1**: 从 `nameA === nameB || nameA.includes(nameB)`（覆盖率~60%）升级到 Levenshtein+Jaccard（~90%）
 ```
 
 ---
@@ -859,7 +1035,7 @@ ingest → wiki-builder → cognitive-memory → git-sync
 ```json
 {
   "governance": {
-    "version": "2.0",
+    "version": "2.1",
     "strictness": "standard",
     "evidence_threshold": { "L3": 3, "L4": 3, "L5": 3 },
     "confirmation_required": ["L4", "L5"],
@@ -867,11 +1043,22 @@ ingest → wiki-builder → cognitive-memory → git-sync
     "contradiction_strategy": "mark_and_keep",
     "decay": { "active_months": 6, "transition_months": 12 },
     "lint_schedule": { "quick": "on_session_end", "deep": "weekly" },
-    "token_limits": { "index_md": 500, "behavior_md": 2000, "cognition_md": 1500, "core_md": 800 }
+    "token_limits": { "index_md": 500, "behavior_md": 2000, "cognition_md": 1500, "core_md": 800 },
+    "v2_1_fields": {
+      "confidence_score": { "default": 0.5, "promote": 0.8, "demote": 0.3 },
+      "last_updated": { "auto_refresh": true, "decay_days": 90 }
+    },
+    "v2_1_lint": {
+      "entity_merge": {
+        "levenshtein_threshold": 3,
+        "string_jaccard_threshold": 0.7,
+        "keyword_jaccard_threshold": 0.5
+      }
+    }
   }
 }
 ```
 
 ---
 
-*Memory Governance v2.0 — 让记忆"对得起信任"*
+*Memory Governance v2.1 — 让记忆"对得起信任"，且工程化优先*
